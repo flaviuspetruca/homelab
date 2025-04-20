@@ -1,0 +1,21 @@
+image:
+  repository: pihole/pihole
+  tag: latest
+  pullPolicy: IfNotPresent
+
+persistence:
+  enabled: true
+  size: 500Mi
+
+service:
+  type: LoadBalancer 
+  port: 80
+  dnsTCPPort: 53
+  dnsUDPPort: 53
+
+ingress:
+  enabled: true
+  host: pihole.local
+
+webPassword: "changeme"
+timezone: "Europe/Bucharest"
