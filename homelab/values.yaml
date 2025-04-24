@@ -1,0 +1,155 @@
+# Default values for my-homelab-setup.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Configuration for the argo-cd dependency
+argo-cd:
+  server:
+    ingress:
+      enabled: true
+      hostname: argocd.mydomain.com
+      ingressClassName: traefik
+      path: /
+      pathType: Prefix
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+      tls: true
+    service:
+      # Ensure the HTTP port is defined (this is usually the default)
+      port: 80
+      # Ensure the HTTPS port is also defined (usually default 443)
+      # Even if not used directly by the ingress backend, it might be needed elsewhere.
+      httpsPort: 443
+
+  configs:
+    params:
+      # THIS IS IMPORTANT: Tell the Argo CD server pod itself to serve HTTP
+      # because Traefik is handling HTTPS termination at the Ingress.
+      # This often influences the helm template to point the Ingress to the HTTP port (80).
+      "server.insecure": "true"
+
+# Configuration for the longhorn dependency
+longhorn:
+  ingress:
+    hostname: longhorn.mydomain.com
+
+# Configuration for the metallb dependency
+metallb:
+  # Values for the metallb chart
+  configInline: # This structure depends on the specific chart's values.yaml
+    addressPools:
+      - name: default
+        protocol: layer2
+        addresses:
+          - "192.168.1.200-192.168.1.250"
+
+# Configuration for the pihole dependency
+pihole:
+  admin:
+    # -- If set to false admin password will be disabled, adminPassword specified above and the pre-existing secret (if specified) will be ignored.
+    enabled: true
+    # -- Specify an existing secret to use as admin password
+    existingSecret: "pihole-creds"
+    # -- Specify the key inside the secret to use
+    passwordKey: "password"
+
+  # Persistent Volume Configuration
+  persistentVolumeClaim:
+    enabled: true
+    accessModes:
+      - ReadWriteMany # Allows multiple pods to access the volume simultaneously
+    storageClassName: longhorn
+    size: 2Gi # Adjust the size based on your needs
+
+  # DNS Service Configuration (expose on same IP as the web interface)
+  serviceDns:
+    type: LoadBalancer # Make sure it's a LoadBalancer service type
+    annotations:
+      metallb.universe.tf/allow-shared-ip: "same-ip"
+    loadBalancerIP: 192.168.1.241 # This is the IP address shared with the web service
+    ports:
+      - protocol: UDP
+        port: 53
+        targetPort: 53
+      - protocol: TCP
+        port: 53
+        targetPort: 53
+
+  # Web Interface Service Configuration (ensure the same external IP)
+  serviceWeb:
+    annotations:
+      metallb.universe.tf/allow-shared-ip: "same-ip"
+    type: LoadBalancer # Expose the web service via LoadBalancer
+    loadBalancerIP: 192.168.1.241 # Same external IP as the DNS service
+    ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 80
+      - protocol: TCP
+        port: 443
+        targetPort: 443
+
+# Configuration for the Nextcloud dependency (matching the dependency 'name' in Chart.yaml)
+nextcloud: # <--- This top-level key matches the dependency name
+  # All the configuration you provided will go here, indented
+  host: nextcloud.mydomain.com
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-admin-creds # References an *existing* K8s Secret
+  trustedDomains:
+    - nextcloud.mydomain.com
+    - nextcloud.local
+    - nextcloud.nextcloud.svc.cluster.local
+    - localhost
+  extraEnv:
+    - name: APACHE_SERVER_NAME
+      value: "nextcloud.local"
+
+  # Note: 'service', 'persistence', 'livenessProbe', 'readinessProbe', 'mariadb'
+  # were likely top-level keys in the *original* Nextcloud chart's values.yaml.
+  # When embedding, they become nested under the dependency name ('nextcloud').
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    accessMode: ReadWriteOnce
+    size: 5Gi
+
+  livenessProbe:
+    exec:
+      command:
+        - sh
+        - -c
+        - "curl -s http://localhost/status.php"
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    failureThreshold: 20
+  readinessProbe:
+    exec:
+      command:
+        - sh
+        - -c
+        - "curl -s http://localhost/status.php"
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    failureThreshold: 20
+
+  mariadb:
+    enabled: true
+    architecture: standalone
+    auth:
+      existingSecret: nextcloud-mariadb-secret # <--- Name of the Kubernetes Secret resource
+      secretKeys:
+        rootPassword: mariadb-root-password # <--- Key name in the secret for root password
+        password: mariadb-password # <--- Key name in the secret for the nextcloud user password
+      username: nextcloud
+      database: nextcloud
+
+cloudflare:
+  configmap:
+    tunnel: "your-tunnel-id"
+    credentials-file: "/path/to/your-tunnel-id.json"
