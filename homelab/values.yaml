@@ -33,16 +33,6 @@ longhorn:
   ingress:
     hostname: longhorn.mydomain.com
 
-# Configuration for the metallb dependency
-metallb:
-  # Values for the metallb chart
-  configInline: # This structure depends on the specific chart's values.yaml
-    addressPools:
-      - name: default
-        protocol: layer2
-        addresses:
-          - "192.168.1.200-192.168.1.250"
-
 # Configuration for the pihole dependency
 pihole:
   admin:

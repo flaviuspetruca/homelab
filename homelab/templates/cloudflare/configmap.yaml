@@ -5,7 +5,7 @@ data:
     credentials-file: ~/credentials.json #output of cloudflared create tunnel
 
     ingress:
-      - hostname: "*.mydomain.space"
+      - hostname: "*.mydomain.com"
         service: http://traefik.kube-system:80
       - service: http_status:404
 kind: ConfigMap
