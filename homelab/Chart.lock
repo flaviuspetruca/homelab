@@ -1,0 +1,24 @@
+dependencies:
+- name: argo-cd
+  repository: https://argoproj.github.io/argo-helm
+  version: 3.35.4
+- name: longhorn
+  repository: https://charts.longhorn.io
+  version: 1.8.1
+- name: metallb
+  repository: https://metallb.github.io/metallb/
+  version: 0.14.9
+- name: pihole
+  repository: https://mojo2600.github.io/pihole-kubernetes/
+  version: 2.29.1
+- name: traefik
+  repository: https://traefik.github.io/charts
+  version: 35.0.1
+- name: cert-manager
+  repository: https://charts.jetstack.io/
+  version: v1.17.1
+- name: nextcloud
+  repository: https://nextcloud.github.io/helm/
+  version: 6.6.10
+digest: sha256:8b654cfd5994684a35e677af447e251fde06c6482d9e2472204b13901f2fa6d1
+generated: "2025-04-24T13:21:10.11706864+03:00"
