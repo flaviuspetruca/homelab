@@ -1,0 +1,3 @@
+defaultSettings:
+  defaultReplicaCount: 2
+  autoDeletePodWhenVolumeDetachedUnexpectedly: true

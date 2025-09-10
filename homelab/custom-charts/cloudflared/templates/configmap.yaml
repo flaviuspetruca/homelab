@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |
+    tunnel: {{ .Values.tunnelId }}
+    credentials-file: /etc/cloudflared/credentials.json
+
+    ingress:
+{{ toYaml .Values.ingress | indent 6 }}

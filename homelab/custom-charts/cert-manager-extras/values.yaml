@@ -1,0 +1,24 @@
+# Default values for cert-manager-extras
+
+# Namespace where cert-manager runs
+namespace: cert-manager
+
+# Self-signed ClusterIssuer
+selfSigned:
+  enabled: true
+  name: selfsigned-cluster-issuer
+
+# Internal CA ClusterIssuer
+internalCA:
+  enabled: true
+  name: internal-ca-issuer
+  secretName: root-ca-secret
+
+# Root CA Certificate
+rootCA:
+  enabled: true
+  name: root-ca
+  secretName: root-ca-secret
+  commonName: my-root-ca
+  duration: 8760h        # 1 year
+  renewBefore: 720h      # 30 days

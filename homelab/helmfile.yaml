@@ -1,0 +1,90 @@
+# helmfile.yaml
+repositories:
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+  - name: longhorn
+    url: https://charts.longhorn.io
+  - name: mojo2600
+    url: https://mojo2600.github.io/pihole-kubernetes/
+  - name: nextcloud
+    url: https://nextcloud.github.io/helm/
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: metallb
+    url: https://metallb.github.io/metallb
+
+releases:
+  # --- Argo CD ---
+  - name: argocd
+    namespace: argocd
+    createNamespace: true
+    chart: argo/argo-cd
+    values:
+      - ./values/values-argocd.yaml
+
+  # --- Longhorn ---
+  - name: longhorn
+    namespace: longhorn-system
+    createNamespace: true
+    chart: longhorn/longhorn
+    values:
+      - ./values/values-longhorn.yaml
+
+  - name: longhorn-extras
+    namespace: longhorn-system
+    chart: ./custom-charts/longhorn-extras
+    needs: [longhorn]
+    values:
+      - ./custom-charts/longhorn-extras/values.yaml
+
+  # --- Pi-hole ---
+  - name: pihole
+    namespace: pihole
+    createNamespace: true
+    chart: mojo2600/pihole
+    values:
+      - ./values/values-pihole.yaml
+
+  # --- Nextcloud ---
+  - name: nextcloud
+    namespace: nextcloud
+    createNamespace: true
+    chart: nextcloud/nextcloud
+    values:
+      - ./values/values-nextcloud.yaml
+
+  # --- Cert-manager ---
+  - name: cert-manager
+    namespace: cert-manager
+    chart: jetstack/cert-manager
+    version: v1.14.5
+    values:
+      - ./values/values-cert-manager.yaml
+
+  - name: cert-manager-extras
+    namespace: cert-manager
+    chart: ./custom-charts/cert-manager-extras
+    needs: [cert-manager]
+    values:
+      - ./custom-charts/cert-manager-extras/values.yaml
+
+  # --- MetalLB ---
+  - name: metallb
+    namespace: metallb-system
+    createNamespace: true
+    chart: metallb/metallb
+    values:
+      - ./values/values-metallb.yaml
+
+  - name: metallb-extras
+    namespace: metallb-system
+    chart: ./custom-charts/metallb-extras
+    needs: [metallb]
+    values:
+      - ./custom-charts/metallb-extras/values.yaml
+
+  # --- Cloudflared ---
+  - name: cloudflared
+    namespace: cloudflared
+    createNamespace: true
+    chart: ./custom-charts/cloudflared

@@ -1,0 +1,63 @@
+nextcloud:
+  host: nextcloud.fpetruca.space
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-admin-creds
+  trustedDomains:
+    - nextcloud.fpetruca.space
+    - nextcloud.local
+    - nextcloud.nextcloud.svc.cluster.local
+    - localhost
+  extraEnv:
+    - name: APACHE_SERVER_NAME
+      value: "nextcloud.fpetruca.space"
+    - name: OVERWRITEPROTOCOL
+      value: "https"
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    # If you're using cert-manager, uncomment and set your issuer:
+    # cert-manager.io/cluster-issuer: internal-ca-issuer
+  hosts:
+    - host: nextcloud.fpetruca.space
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - nextcloud.fpetruca.space
+      # If cert-manager will create the secret, you can omit secretName or set a name to bind:
+      # secretName: nextcloud-tls
+
+livenessProbe:
+  enabled: false
+
+readinessProbe:
+  enabled: false
+
+service:
+  type: ClusterIP
+  port: 80
+
+persistence:
+  enabled: true
+  storageClass: longhorn
+  accessMode: ReadWriteOnce
+  size: 180Gi
+
+phpConfigs:
+  upload_max_filesize: 20G
+  post_max_size: 20G
+
+mariadb:
+  enabled: true
+  architecture: standalone
+  auth:
+    existingSecret: nextcloud-mariadb-secret
+    rootPassword: password # key name in the secret
+    password: password
+    username: password # key name in the secre
+    database: nextcloud

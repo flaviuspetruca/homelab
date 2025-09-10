@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cert-manager-extras
+description: Custom ClusterIssuers and Certificates for cert-manager
+type: application
+version: 0.1.0

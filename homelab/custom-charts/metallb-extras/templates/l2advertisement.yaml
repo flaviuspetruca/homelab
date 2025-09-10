@@ -1,8 +1,8 @@
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
-  name: default-l2advertisement
+  name: {{ .Values.l2Advertisement.name }}
   namespace: metallb-system
 spec:
   ipAddressPools:
-    - default-addresspool
+    {{- toYaml .Values.l2Advertisement.pools | nindent 4 }}

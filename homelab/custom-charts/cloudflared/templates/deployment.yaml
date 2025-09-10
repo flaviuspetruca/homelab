@@ -2,12 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared
-  namespace: cloudflare
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
       app: cloudflared
-  replicas: 2 # For high availability
+  replicas: {{ .Values.replicaCount }}
   template:
     metadata:
       labels:
@@ -15,19 +15,15 @@ spec:
     spec:
       containers:
         - name: cloudflared
-          image: cloudflare/cloudflared:latest
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - tunnel
             - --config
             - /etc/cloudflared/config.yaml
             - run
           resources:
-            requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
-              memory: "256Mi"
-              cpu: "500m"
+{{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
             - name: config
               mountPath: /etc/cloudflared/config.yaml
@@ -41,7 +37,7 @@ spec:
             name: cloudflared-config
         - name: credentials
           secret:
-            secretName: cloudflared-credentials
+            secretName: {{ .Values.credentialsSecret }}
             items:
               - key: credentials.json
                 path: credentials.json
