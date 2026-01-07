@@ -84,7 +84,7 @@ releases:
       - ./custom-charts/metallb-extras/values.yaml
 
   # --- Cloudflared ---
-  - name: cloudflared
+  - name: cloudflared-extras
     namespace: cloudflared
     createNamespace: true
-    chart: ./custom-charts/cloudflared
+    chart: ./custom-charts/cloudflared-extras

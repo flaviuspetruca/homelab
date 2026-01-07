@@ -22,25 +22,6 @@ I wanted a real-world platform to:
 
 ---
 
-## ⚙️ Architecture Overview
-
-This stack is composed of tightly integrated, cloud-native components:
-
-| Component       | Role                                             |
-| --------------- | ------------------------------------------------ |
-| **ArgoCD**      | Continuous deployment & GitOps                   |
-| **k3s**         | Lightweight Kubernetes distro                    |
-| **MetalLB**     | LoadBalancer for bare-metal networking           |
-| **Traefik**     | Ingress controller, TLS, routing                 |
-| **Cloudflared** | Encrypted remote tunnel access                   |
-| **Longhorn**    | Distributed persistent storage                   |
-| **Pi-hole**     | DNS-level ad blocking                            |
-| **Nextcloud**   | Private cloud with file sync, calendar, and more |
-
----
-
-## 🔧 Installation Guide
-
 ### 📦 Prerequisites
 
 -   2+ machines (Raspberry Pis, NUCs, or x86 servers)
@@ -49,7 +30,65 @@ This stack is composed of tightly integrated, cloud-native components:
 -   Cloudflare-managed domain
 -   At least one control plane node (HA supported with multiple control planes)
 
+Install [Ubuntu Server 22.04](https://ubuntu.com/download/server) on each node.
+
 ---
+
+## ⚡ Automated Setup with `homelab` CLI
+
+For a faster and more consistent setup, you can use the included **`homelab` CLI tool**.
+This wraps the manual setup steps into a streamlined workflow.
+
+### 📦 Install Dependencies
+
+Ensure Python 3.9+ is installed on your local machine:
+
+```bash
+git clone https://github.com/flaviuspetruca/homelab.git
+cd homelab
+pip install -r requirements.txt
+```
+
+### ⚡ Available Commands
+
+```bash
+python homelab --help
+```
+
+#### 🔧 Initialize Cluster
+
+Sets up the base k3s cluster across nodes (control plane + workers):
+Run this on all nodes.
+
+```bash
+python homelab init
+```
+
+This will:
+
+-   Configure nodes
+-   Install k3s with control plane and workers
+-   Prepare prerequisites for Helm and Helmfile
+
+#### 🚀 Deploy Applications
+
+Deploys your chosen stack interactively:
+
+```bash
+python homelab deploy
+```
+
+This will:
+
+-   Prompt for which components to install (Nextcloud, Pi-hole, etc.)
+-   Apply Helmfile releases
+-   Configure secrets and ingress as needed
+
+---
+
+## 🖥️ Manual Setup (Optional)
+
+If you prefer fine-grained control, you can still follow the **manual setup** instructions below.
 
 ### 🖥️ Step 1: Install Ubuntu Server
 
@@ -91,8 +130,6 @@ sudo netplan apply
 curl -sfL https://get.k3s.io | sh -s - server --cluster-init
 ```
 
-The `--cluster-init` flag initializes the datastore, allowing HA with multiple control plane nodes.
-
 Retrieve the node token:
 
 ```bash
@@ -131,7 +168,7 @@ helm plugin install https://github.com/databus23/helm-diff
 
 ### 🛠️ Step 4: One-Time Setup
 
-#### 🔑 1. Install Cloudflared & Configure Tunnel
+#### 🔑 Cloudflared Tunnel
 
 Install cloudflared:
 
@@ -148,7 +185,7 @@ cloudflared tunnel create homelab-tunnel
 cloudflared tunnel route dns homelab-tunnel <subdomain.yourdomain.com>
 ```
 
-Save the credentials JSON and mount it as a secret:
+Save credentials JSON and mount it as a secret:
 
 ```bash
 kubectl create namespace cloudflared
@@ -157,19 +194,9 @@ kubectl create secret generic cloudflared-credentials \
   -n cloudflared
 ```
 
-Optionally, create a ConfigMap for ingress rules:
-
-```bash
-kubectl create configmap cloudflared-ingress \
-  --from-file=config.yaml=./cloudflared-config.yaml \
-  -n cloudflared
-```
-
 ---
 
-#### 🔐 2. Longhorn UI Authentication
-
-Longhorn lacks built-in auth, so secure the UI with Traefik middleware and basic auth.
+#### 🔐 Longhorn UI Authentication
 
 ```bash
 htpasswd -c ./auth longhornadmin
@@ -180,23 +207,18 @@ kubectl create secret generic basic-auth \
 
 ---
 
-#### 🧾 3. Nextcloud Secrets
+#### 🧾 Nextcloud Secrets
 
 ```bash
 kubectl create secret generic nextcloud-admin-creds \
   -n nextcloud \
   --from-literal=nextcloud-username=<username> \
   --from-literal=nextcloud-password=<password>
-
-kubectl create secret generic nextcloud-mariadb-secret \
-  -n nextcloud \
-  --from-literal=mariadb-root-password=<rootpass> \
-  --from-literal=mariadb-password=<dbpass>
 ```
 
 ---
 
-#### 🧰 4. Pi-hole Secrets
+#### 🧰 Pi-hole Secrets
 
 ```bash
 kubectl create secret generic pihole-creds \
@@ -230,44 +252,13 @@ helmfile apply
 
 ## 🧱 Core Components Explained
 
--   **k3s** – Lightweight Kubernetes distro with containerd, no external etcd
--   **ArgoCD** – GitOps engine for declarative, version-controlled deployments
--   **MetalLB** – LoadBalancer IP allocation for bare-metal clusters
--   **Traefik** – Ingress, routing, TLS with Let’s Encrypt
--   **Cloudflared** – Secure tunnels to Cloudflare, no exposed ports
--   **Pi-hole** – DNS ad-blocking with Longhorn-backed persistence
--   **Nextcloud** – Private cloud storage & collaboration platform
--   **Longhorn** – Replicated distributed storage across nodes
-
----
-
-## 🛠 Tooling & Workflow
-
-| Tool           | Role                               |
-| -------------- | ---------------------------------- |
-| **Helm**       | Package & deploy charts            |
-| **Helmfile**   | Manage multiple Helm releases      |
-| **ArgoCD**     | GitOps-driven sync of manifests    |
-| **Cloudflare** | DNS + secure tunnels               |
-| **Longhorn**   | Persistent volume management       |
-| **Git**        | Source of truth for infrastructure |
-
----
-
-## 🔐 Secrets Management
-
-Secrets are managed via Kubernetes and templated into Helm values:
-
--   `nextcloud-admin-creds`
--   `nextcloud-mariadb-secret`
--   `pihole-creds`
--   `cloudflared-credentials`
--   `basic-auth` (for Longhorn UI)
-
----
-
-✅ Fixed typos (`fazes → phases`, worker join command),
-✅ Clarified node roles (control plane vs. worker),
-✅ Added missing `cloudflared` installation,
-✅ Smoothed the installation order for CRDs,
-✅ Improved readability and structure.
+| Component       | Role                                                            |
+| --------------- | --------------------------------------------------------------- |
+| **k3s**         | Lightweight Kubernetes distro with containerd, no external etcd |
+| **ArgoCD**      | GitOps engine for declarative, version-controlled deployments   |
+| **MetalLB**     | LoadBalancer IP allocation for bare-metal clusters              |
+| **Traefik**     | Ingress, routing, TLS with Let’s Encrypt                        |
+| **Cloudflared** | Secure tunnels to Cloudflare, no exposed ports                  |
+| **Pi-hole**     | DNS ad-blocking with Longhorn-backed persistence                |
+| **Nextcloud**   | Private cloud storage & collaboration platform                  |
+| **Longhorn**    | Replicated distributed storage across nodes                     |

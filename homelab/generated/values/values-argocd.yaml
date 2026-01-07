@@ -1,0 +1,15 @@
+configs:
+  params:
+    server.insecure: 'true'
+namespaceOverride: argocd
+server:
+  ingress:
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    enabled: true
+    hostname: argocd.fpetruca.space
+    hosts:
+    - argocd.fpetruca.space
+    ingressClassName: traefik
+  service:
+    type: ClusterIP

@@ -56,8 +56,8 @@ mariadb:
   enabled: true
   architecture: standalone
   auth:
-    existingSecret: nextcloud-mariadb-secret
-    rootPassword: password # key name in the secret
-    password: password
-    username: password # key name in the secre
+    username: fpetruca
+    #existingSecret: nextcloud-mariadb-secret
+    password: Celmai$mecher280601 # those will be ignored if existingSecret is set
+    rootPassword: Celmai$mecher280601 # those will be ignored if existingSecret is set
     database: nextcloud
